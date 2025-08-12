@@ -2,7 +2,7 @@ import os
 import subprocess
 import argparse
 from openai import OpenAI
-from github import Github
+from pygithub import Github
 
 def collect_pr_diff():
     """Collects changed files & diffs from the PR."""
