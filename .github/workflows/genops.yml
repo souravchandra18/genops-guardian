@@ -4,13 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Run mode (real or demo)'
+        description: 'Run mode (real, demo, or pr-review)'
         required: true
         default: 'real'
       repo_path:
         description: 'Path to repository for analysis'
         required: false
         default: '.'
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   analyze:
@@ -32,7 +34,12 @@ jobs:
       - name: Run GenOps Guardian
         env:
           GENOPS_API_KEY: ${{ secrets.GENOPS_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scripts/review_pr.py \
-            --mode "${{ github.event.inputs.mode }}" \
-            --repo "${{ github.event.inputs.repo_path }}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            python scripts/review_pr.py --mode pr-review --repo "${{ github.workspace }}"
+          else
+            python scripts/review_pr.py \
+              --mode "${{ github.event.inputs.mode }}" \
+              --repo "${{ github.event.inputs.repo_path }}"
+          fi
