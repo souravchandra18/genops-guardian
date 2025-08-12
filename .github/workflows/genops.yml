@@ -1,0 +1,38 @@
+name: GenOps Guardian
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Run mode (real or demo)'
+        required: true
+        default: 'real'
+      repo_path:
+        description: 'Path to repository for analysis'
+        required: false
+        default: '.'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run GenOps Guardian
+        env:
+          GENOPS_API_KEY: ${{ secrets.GENOPS_API_KEY }}
+        run: |
+          python scripts/review_pr.py \
+            --mode "${{ github.event.inputs.mode }}" \
+            --repo "${{ github.event.inputs.repo_path }}"
