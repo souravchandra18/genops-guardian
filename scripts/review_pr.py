@@ -4,7 +4,6 @@ import argparse
 import yaml
 import json
 from openai import OpenAI
-from github import Github
 
 def collect_repo_context(repo_path):
     """Collects logs, configs, and recent git changes from the repository."""
@@ -83,10 +82,10 @@ if __name__ == "__main__":
     parser.add_argument("--repo", required=False, default=".", help="Path to repo")
     args = parser.parse_args()
 
-    print("Running GenOps Guardian...")
+    print("🔍 Running GenOps Guardian...")
     result = run_analysis(args.mode, args.repo)
 
-    print("\nAnalysis Result:\n")
+    print("\n📊 Analysis Result:\n")
     print(result)
 
     # Save output for GitHub Actions logs
