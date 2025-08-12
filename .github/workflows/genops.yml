@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip3 install --upgrade pip3
-          pip3 install PyGithub
+          pip3 install pygithub
           pip3 install -r scripts/requirements.txt  
 
       - name: Run GenOps Guardian
