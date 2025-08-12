@@ -4,15 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Run mode (real, demo, or pr-review)'
+        description: 'Run mode (real or demo)'
         required: true
         default: 'real'
       repo_path:
         description: 'Path to repository for analysis'
         required: false
         default: '.'
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 jobs:
   analyze:
@@ -29,20 +27,12 @@ jobs:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: |
-          python -m pip3 install --upgrade pip3
-          pip3 install pygithub
-          pip3 install -r scripts/requirements.txt  
+        run: pip install -r requirements.txt
 
       - name: Run GenOps Guardian
         env:
           GENOPS_API_KEY: ${{ secrets.GENOPS_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            python scripts/review_pr.py --mode pr-review --repo "${{ github.workspace }}"
-          else
-            python scripts/review_pr.py \
-              --mode "${{ github.event.inputs.mode }}" \
-              --repo "${{ github.event.inputs.repo_path }}"
-          fi
+          python scripts/review_pr.py \
+            --mode "${{ github.event.inputs.mode }}" \
+            --repo "${{ github.event.inputs.repo_path }}"
