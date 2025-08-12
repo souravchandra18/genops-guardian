@@ -2,7 +2,7 @@
 import os
 import subprocess
 import argparse
-import openai
+from openai import OpenAI
 from github import Github
 
 def collect_pr_diff():
@@ -62,7 +62,7 @@ def run_analysis(mode, repo_path):
     if not api_key:
         raise ValueError("GENOPS_API_KEY environment variable is missing!")
 
-    openai.api_key = api_key
+    client = OpenAI(api_key=api_key)
 
     if mode == "demo":
         context = "This is a simulated CI/CD pipeline log with no real data."
@@ -82,7 +82,7 @@ Provide:
 ---
 {context}
 """
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}]
         )
@@ -101,7 +101,7 @@ Analyze the following repo data and provide:
 ---
 {context}
 """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
