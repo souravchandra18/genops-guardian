@@ -8,7 +8,12 @@ from github import Github
 def collect_pr_diff():
     """Collects changed files & diffs from the PR."""
     repo_name = os.getenv("GITHUB_REPOSITORY")
-    pr_number = os.getenv("GITHUB_REF").split("/")[-1]
+    ref = os.getenv("GITHUB_REF")
+    ref_parts = ref.split("/")
+    if len(ref_parts) < 3 or not ref_parts[2].isdigit():
+        raise ValueError(f"Unexpected GITHUB_REF format or missing PR number: {ref}")
+    pr_number = ref_parts[2]
+
     gh_token = os.getenv("GITHUB_TOKEN")
     gh = Github(gh_token)
     repo = gh.get_repo(repo_name)
