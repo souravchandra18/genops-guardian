@@ -1,8 +1,8 @@
 import os
 import subprocess
 import argparse
-from openai import OpenAI
-from pygithub import Github
+import openai
+from github import Github
 
 def collect_pr_diff():
     """Collects changed files & diffs from the PR."""
@@ -55,7 +55,8 @@ def run_analysis(mode, repo_path):
     api_key = os.getenv("GENOPS_API_KEY")
     if not api_key:
         raise ValueError("GENOPS_API_KEY environment variable is missing!")
-    client = OpenAI(api_key=api_key)
+
+    openai.api_key = api_key
 
     if mode == "demo":
         context = "This is a simulated CI/CD pipeline log with no real data."
@@ -66,39 +67,39 @@ def run_analysis(mode, repo_path):
         context = f"PR Title: {title}\nPR Body: {body}\nDiff:\n{diff}"
 
         prompt = f"""
-        You are a senior software engineer reviewing a pull request.
-        Provide:
-        1. Bug risks
-        2. Security issues
-        3. Code quality improvements
-        4. Maintainability suggestions
-        ---
-        {context}
-        """
-        response = client.responses.create(
-            model="gpt-4.1-mini",
-            input=prompt
+You are a senior software engineer reviewing a pull request.
+Provide:
+1. Bug risks
+2. Security issues
+3. Code quality improvements
+4. Maintainability suggestions
+---
+{context}
+"""
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
         )
-        review_comment = response.output_text
-        pr.create_issue_comment(f"###  AI PR Review\n{review_comment}")
+        review_comment = response.choices[0].message.content
+        pr.create_issue_comment(f"### AI PR Review\n{review_comment}")
         return review_comment
     else:
         raise ValueError("Invalid mode provided.")
 
     prompt = f"""
-    You are GenOps Guardian — an AI DevOps assistant.
-    Analyze the following repo data and provide:
-    1. Potential pipeline failures
-    2. Security issues
-    3. Optimization suggestions
-    ---
-    {context}
-    """
-    response = client.responses.create(
-        model="gpt-4.1-mini",
-        input=prompt
+You are GenOps Guardian — an AI DevOps assistant.
+Analyze the following repo data and provide:
+1. Potential pipeline failures
+2. Security issues
+3. Optimization suggestions
+---
+{context}
+"""
+    response = openai.ChatCompletion.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
     )
-    return response.output_text
+    return response.choices[0].message.content
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
