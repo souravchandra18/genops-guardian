@@ -34,7 +34,7 @@ jobs:
       - name: Run GenOps Guardian
         env:
           GENOPS_API_KEY: ${{ secrets.GENOPS_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             python scripts/review_pr.py --mode pr-review --repo "${{ github.workspace }}"
