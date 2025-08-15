@@ -1,6 +1,7 @@
 import os
 import subprocess
 import argparse
+import json
 from openai import OpenAI
 from github import Github
 
@@ -115,45 +116,76 @@ def post_pr_comment(pr_number, message):
 
 
 def run_analysis(mode, repo_path):
-    """Runs AI-powered analysis based on mode."""
+    """Runs AI-powered analysis and calculates risk score."""
     api_key = os.getenv("GENOPS_API_KEY")
     if not api_key:
         raise ValueError("GENOPS_API_KEY environment variable is missing!")
 
     client = OpenAI(api_key=api_key)
 
+    # Select context
     if mode == "demo":
         context = "This is a simulated CI/CD pipeline log with no real data."
-
     elif mode == "real":
         context = collect_repo_context(repo_path)
-
     elif mode == "pr":
         base_sha = os.getenv("BASE_SHA")
         head_sha = os.getenv("HEAD_SHA")
         if not base_sha or not head_sha:
             raise ValueError("BASE_SHA and HEAD_SHA environment variables are required for PR mode.")
         context = collect_pr_context(repo_path, base_sha, head_sha)
-
     else:
         raise ValueError("Mode must be 'real', 'demo', or 'pr'.")
 
+    # Prompt for structured JSON risk analysis
     prompt = f"""
     You are GenOps Guardian — an AI DevOps assistant.
-    Analyze the following repository or PR data and provide:
-    1. Potential pipeline failures
-    2. Security issues
-    3. Optimization suggestions
+    Analyze the following repository or PR data and output a JSON object with:
+    - "risk_score": integer (0-100, where 100 is most risky)
+    - "risk_level": Low / Medium / High
+    - "issues": list of detected problems
+    - "analysis_text": a short human-readable explanation
+
+    Base your score on:
+    1. Potential pipeline failures (weight 30%)
+    2. Security issues (weight 40%)
+    3. Optimization/code quality suggestions (weight 20%)
+    4. Size/complexity of changes (weight 10%)
+
     ---
     {context}
     """
 
     response = client.responses.create(
         model="gpt-4.1-mini",
-        input=prompt
+        input=prompt,
+        temperature=0
     )
 
-    return response.output_text
+    try:
+        ai_output = response.output_text.strip()
+        data = json.loads(ai_output)  # Ensure valid JSON
+    except Exception:
+        data = {
+            "risk_score": 50,
+            "risk_level": "Medium",
+            "issues": ["AI returned unstructured output"],
+            "analysis_text": response.output_text
+        }
+
+    # Save risk JSON
+    os.makedirs("analysis_results", exist_ok=True)
+    with open("analysis_results/risk.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+    # Build final summary
+    summary = (
+        f"**Risk Score:** {data['risk_score']} ({data['risk_level']})\n\n"
+        f"**Detected Issues:**\n" + "\n".join(f"- {i}" for i in data.get("issues", [])) +
+        f"\n\n**AI Analysis:**\n{data.get('analysis_text', '')}"
+    )
+
+    return summary
 
 
 if __name__ == "__main__":
@@ -168,12 +200,10 @@ if __name__ == "__main__":
     print("\n📊 Analysis Result:\n")
     print(result)
 
-    # Save output for GitHub Actions logs
-    os.makedirs("analysis_results", exist_ok=True)
     with open("analysis_results/output.txt", "w", encoding="utf-8") as f:
         f.write(result)
 
-    # If in PR mode, post comment back to PR
+    # Post comment if PR mode
     if args.mode == "pr":
         pr_number = os.getenv("PR_NUMBER")
         if pr_number:
