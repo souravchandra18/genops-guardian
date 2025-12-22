@@ -110,7 +110,7 @@ def post_pr_comment(pr_number, message):
         repo = gh.get_repo(repo_name)
         pr = repo.get_pull(int(pr_number))
         pr.create_issue_comment(message)
-        print(f"✅ Comment posted to PR #{pr_number}")
+        print(f"Comment posted to PR #{pr_number}")
     except Exception as e:
         print(f"[Error posting PR comment: {e}]")
 
@@ -194,10 +194,10 @@ if __name__ == "__main__":
     parser.add_argument("--repo", required=False, default=".", help="Path to repo")
     args = parser.parse_args()
 
-    print("🔍 Running GenOps Guardian...")
+    print(" Running GenOps Guardian...")
     result = run_analysis(args.mode, args.repo)
 
-    print("\n📊 Analysis Result:\n")
+    print("\n Analysis Result:\n")
     print(result)
 
     with open("analysis_results/output.txt", "w", encoding="utf-8") as f:
