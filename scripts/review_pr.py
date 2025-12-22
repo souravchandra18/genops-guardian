@@ -157,9 +157,9 @@ def run_analysis(mode, repo_path):
     """
 
     response = client.responses.create(
-        model="gpt-4.1-mini",
+        model="gpt-oss-120b",
         input=prompt,
-        temperature=0
+        temperature=0.1
     )
 
     try:
